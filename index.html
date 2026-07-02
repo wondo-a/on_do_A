@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>온도의 휴대폰</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: rgb(255, 255, 255);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: -apple-system, sans-serif;
+        }
+
+        /* 껍데기 휴대폰 본체 */
+        .phone {
+            position: relative;
+            background: rgb(0, 0, 0);
+            aspect-ratio: 9/16;
+            max-width: 340px;
+            width: 100%;
+            height: 90vh;
+            border: 10px solid rgb(0, 0, 0);
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px #4a4a4a,
+                0 0 0 2px #1f1f1f,
+                inset 0 0 0 2px rgba(255,255,255,.08),
+                inset 0 0 10px rgba(0,0,0,.45),
+                inset 0 1px 2px rgba(255,255,255,.08),
+                0 12px 35px rgba(0,0,0,.55);
+            outline: 2px solid #3a3a3a;
+            outline-offset: 3px;
+        }
+
+        /* 🛠️ [하드웨어] 고정 베젤 및 버튼 설정 */
+        .notch {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 40px;      /* 상단 검은 베젤 */
+            background: rgb(0, 0, 0);
+            z-index: 300;
+        }
+
+        .down_notch {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%;
+            height: 50px;      /* 하단 검은 베젤 */
+            background: rgb(0, 0, 0);
+            z-index: 300;
+        }
+
+        .home-btn{
+            position:absolute;
+            bottom:0px;        /* 하단 베젤 안쪽 중앙 정렬 조절 */
+            left:50%;
+            transform:translateX(-50%);
+            width:42px; height:42px;
+            border:2px solid rgba(62, 62, 62, 0.7);
+            border-radius:50%;
+            background:rgba(255,255,255,.15);
+            backdrop-filter:blur(6px);
+            display:flex; justify-content:center; align-items:center;
+            color:#6f6f6f; font-size:18px; cursor:pointer;
+            z-index:500;
+        }
+
+        .power-btn {
+            position: absolute;
+            top: 50%; right: -45px;
+            width: 4px; height: 60px;
+            background: #333; border-radius: 2px;
+            transform: translateY(-50%); cursor: pointer;
+            z-index: 500;
+        }
+        .power-btn:active { background: #555; }
+
+
+        /* 💡 [핵심 추가] 실제 작동하는 액정 화면 영역 (노치 아래, 하단 베젤 위) */
+        .main-display {
+            position: absolute;
+            top: 40px;         /* 상단 노치 높이만큼 다운 */
+            bottom: 50px;      /* 하단 베젤 높이만큼 업 */
+            left: 0; right: 0;
+            overflow: hidden;  /* 화면을 벗어나는 슬라이더나 잠금화면 자동 컷팅 */
+            background: #000;
+        }
+
+
+        /* 📱 [소프트웨어] 화면 내부 콘텐츠 스타일 정의 */
+        
+        /* 상단 상태바 (이제 액정화면 기준 top:0) */
+        header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 32px;
+            z-index: 250;      /* 내부 콘텐츠 중 가장 최상단 */
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 15px;
+            color: rgb(0, 0, 0);
+            font-weight: bold;
+            pointer-events: none;
+            background: transparent;
+            transition: background 0.1111s ease;
+        }
+
+        .status-left { color: inherit; flex: 1; text-align: left; }
+        .status-right { color: inherit; flex: 1; text-align: right; font-size: 13px; }
+
+        /* 잠금화면 (액정 틀에 맞춰 100% 가득 참) */
+        .lock-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: url('../img/진온_마주보는.png') center/cover no-repeat;
+            color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 50px 20px 0px; /* 노치에서 벗어났으므로 상하 여백 최적화 */
+            z-index: 200;
+            transition: transform 0.6s ease;
+            cursor: pointer;
+        }
+
+        .lock-time { font-size: 60px; font-weight: 700; letter-spacing: -1px; margin-top: -8px; }
+        .lock-date { font-size: 15px; opacity: 0.8; margin-top: -80px; }
+
+        /* 비밀번호 입력창 */
+        .passcode-container {
+            text-align: center; margin-top: 20px;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.4s ease; pointer-events: none; width: 100%;
+        }
+        .passcode-container.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .passcode-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 30px; }
+        .dot { width: 14px; height: 14px; background: rgba(0, 0, 0, 0.3); border-radius: 50%; transition: all 0.2s; }
+        .dot.filled { background: rgba(0, 0, 0, 0.747); transform: scale(1.2); }
+
+        /* 키패드 */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 240px;
+            margin: 0 auto;
+            justify-content: center;
+            justify-items: center;
+        }
+
+        .key { width: 48px; height: 48px; background: rgba(0, 0, 0, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 400; color: rgb(255, 255, 255); cursor: pointer; user-select: none; transition: all 0.1s; }
+        .key:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
+        .key.empty { visibility: hidden; }
+
+        .emergency-text, .delete-text { font-size: 15px; color: rgba(0, 0, 0, 0.695); display: flex; align-items: center; justify-content: center; user-select: none; margin-top: -45px; }
+        .emergency-text { grid-column: 1; pointer-events: none; }
+        .delete-text { grid-column: 3; cursor: pointer; }
+
+        /* 비번 틀렸을 때 애니메이션 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .passcode-container.shake { animation: shake 0.23s ease-in-out; }
+
+        /* 홈화면 슬라이더 */
+        .slider { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; transition: transform 0.3s ease-out; z-index: 1; }
+        .screen { min-width: 100%; height: 100%; position: relative; overflow: hidden; }
+        
+        .screen:first-child { background: url('../img/진온_마주봐줘.png') center/cover no-repeat; }
+        .screen:first-child::after {
+            content: ''; position: absolute; top: -30px; left: -30px; right: -30px; height: 110px;
+            background: inherit; background-position: top center; filter: blur(60px); z-index: 3; pointer-events: none;
+        }
+
+        .screen:nth-child(2) {
+            background: url('../img/진온_마주봐줘.png') center/cover no-repeat;
+            padding: 38px 15px 40px 15px;
+        }
+
+        /* 홈 아이콘 배치 (상태바 높이를 고려해 top 지정) */
+        .home-icons {
+            position: absolute;
+            top: 38px; left: 0; right: 0;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 15px; z-index: 10;
+        }
+        
+        .icon {
+            width: 60px; height: 60px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 11px; text-align: center;
+            background-size: 36px; background-repeat: no-repeat; background-position: center 10px;
+            padding-top: 55px; gap: 6px; cursor: pointer;
+            text-shadow: 0px 0px 5px black;
+        }
+        
+        /* 위젯 스타일 */
+        .widget-container {
+            width: 100%;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .widget {
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+            color: rgb(0, 0, 0);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .widget-content {
+            padding: 10px;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .size-2x2 { grid-column: span 2; height: 115px; }
+        .size-4x2 { grid-column: span 4; height: 115px; }
+        .size-4x4 { grid-column: span 4; height: 230px; }
+
+        .photo-widget-content { background-size: cover; background-repeat: no-repeat; background-position: center; background-color: transparent !important; backdrop-filter: none; }
+
+        /* 디데이 위젯 */
+        .dday-widget-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 15px;
+            background-color: #ffffff00;
+        }
+
+        .dday-title {
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.8;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .dday-count {
+            font-size: 38px;
+            font-weight: 600;
+            line-height: 1;
+            margin-bottom: 14px;
+            align-self: center;
+            background: linear-gradient(to right, #540b0e, #331832);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #540b0e;
+        }
+
+        .dday-start-date {
+            font-size: 11px;
+            font-weight: 400;
+            opacity: 0.6;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        /* 메모 위젯 */
+        .memo-widget-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch; /* 자식 요소들이 가로로 꽉 차게 늘려 정렬 기준을 맞춤 */
+            padding: 16px;
+            width: 100%; height: 100%;
+        }
+
+        .memo-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #000;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.15); /* 검은 글씨에 맞춰 어두운 구분선으로 변경 */
+            padding-bottom: 6px;
+            margin-bottom: 10px; /* 꼬여있던 음수 마진 제거하고 시원하게 여백 확보 */
+        }
+
+        .memo-text {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4; /* 행간을 넓혀 글씨가 뭉치지 않게 조절 */
+            color: #333;
+            white-space: pre-wrap;
+            text-align: left; /* 제목과 똑같이 왼쪽 정렬로 통일 */
+        }
+
+        .dots { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 20; }
+        .dot-page { width: 6px; height: 6px; background: rgba(255,255,255,0.5); border-radius: 50%; transition: all 0.3s; }
+        .dot-page.active { background: white; transform: scale(1.3); }
+
+        /* 📱 앱 화면 (상태바 아래 영역을 가득 채움) */
+        .app-container {
+            position: absolute;
+            top: 32px;         /* 상태바(header) 높이만큼 아래서 시작 */
+            left: 0; width: 100%;
+            bottom: 0;         /* 메인 액정 최하단까지 채우기 */
+            height: auto;
+            z-index: 50; display: none; overflow: hidden;
+        }
+        .app-container.active { display: block; }
+        .app-frame { width: 100%; height: 100%; border: none; background: transparent; position: absolute; top: 0; left: 0; }
+
+        /* 화면 전환 블러/암전 레이어 */
+        #screenOverlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.596);
+            opacity: 0; pointer-events: none; z-index: 9999;
+            transition: opacity 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+    <div class="power-btn" id="powerBtn"></div>
+
+    <div class="notch"></div>
+    <div class="down_notch"></div>
+    <div class="home-btn" id="homeBtn">◉</div>
+
+    <div class="main-display">
+        <div id="screenOverlay"></div>
+
+        <header style="color: black;">
+            <div style="font-size: 14px;">臨川&nbsp;
+            <class="status-left" id="statusTime">
+            </div>
+            <div class="status-right">
+                <img src="../icon/cellular.png" alt="signal" style="height:18px; vertical-align:middle; margin-left:4px;">&ensp;LTE
+                <img src="../icon/battery2.png" alt="signal" style="height:18px; vertical-align:middle; margin-left:4px;">
+            </div>
+        </header>
+
+        <!-- 잠금화면 키패드 -->
+        <div class="lock-screen" id="lockScreen">
+            <div></div>
+            <div style="text-align: center;">
+                <div class="lock-date" id="lockDate"></div>
+                <div class="lock-time" id="lockTime"></div>
+            </div>
+
+            <div class="passcode-container" id="passcodeContainer">
+                <div class="passcode-dots" id="passcodeDots"></div>
+                <div class="keypad" id="keypad">
+                    <div class="key" data-value="1">1</div>
+                    <div class="key" data-value="2">2</div>
+                    <div class="key" data-value="3">3</div>
+                    <div class="key" data-value="4">4</div>
+                    <div class="key" data-value="5">5</div>
+                    <div class="key" data-value="6">6</div>
+                    <div class="key" data-value="7">7</div>
+                    <div class="key" data-value="8">8</div>
+                    <div class="key" data-value="9">9</div>
+                    <div class="key empty"></div>
+                    <div class="key" data-value="0">0</div>
+                    <div class="key empty"></div>
+
+                    <div class="emergency-text">긴급상황</div>
+                    <div class="key empty"></div>
+                    <div class="delete-text" id="deleteBtn">삭제</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 앱 목록 -->
+        <div class="slider" id="slider">
+            <div class="screen">
+                <div class="home-icons">
+                    <div class="icon" data-app="setting.html" style="background-image: url('../icon/setting.png');">설정</div>
+                    <div class="icon" data-app="call_list.html" style="background-image: url('../icon/call.png');">전화</div>
+                    <div class="icon" data-app="message_list.html" style="background-image: url('../icon/message.png');">메시지</div>
+                    <div class="icon" data-app="file.html" style="background-image: url('../icon/file.png');">파일</div>
+                    <div class="icon" data-app="memo_list.html" style="background-image: url('../icon/memo.png');">메모</div>
+                    <div class="icon" data-app="photo.html" style="background-image: url('../icon/photo.png');">사진</div>
+                    <div class="icon" data-app="google.html" style="background-image: url('../icon/google.png');">구글</div>
+                    <div class="icon" data-app="music.html" style="background-image: url('../icon/music.png');">음악</div>
+                </div>
+            </div>
+
+            <!-- 위젯 -->
+            <div class="screen">
+                <div class="widget-container">
+                    <!-- 사진 위젯 -->
+                    <div class="widget size-4x4 top-right">
+                        <div class="widget-content photo-widget-content"
+                        style="background-image: url(../img/진온_위젯.jpg);">
+                        </div>
+                    </div>
+
+                    <!-- 생일 위젯 -->
+                    <div class="widget size-2x2">
+                        <div class="widget-content memo-widget-content">
+                            <div class="memo-title">생일</div>
+                            <div class="memo-text">진운 : 4월 18일<br>온도 : 11월 16일</div>
+                        </div>
+                    </div>
+
+                    <!-- 디데이 위젯 -->
+                    <div class="widget size-2x2 top-right">
+                        <div class="widget-content dday-widget-content" id="ddayWidget">
+                            <div id="ddayStartDate" class="dday-start-date"></div>
+                            <div class="dday-title">진운 x 온도</div>
+                            <div id="ddayCount" class="dday-count"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dots" id="dots"></div>
+
+        <div class="app-container" id="appContainer"></div>
+    </div>
+</div>
+
+<script>
+    const phone = document.getElementById('phone');
+    const lockScreen = document.getElementById('lockScreen');
+    const passcodeContainer = document.getElementById('passcodeContainer');
+    const slider = document.getElementById('slider');
+    const lockTime = document.getElementById('lockTime');
+    const statusTime = document.getElementById('statusTime');
+    const lockDate = document.getElementById('lockDate');
+    const passcodeDots = document.getElementById('passcodeDots');
+    const keypad = document.getElementById('keypad');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    const screens = document.querySelectorAll('.screen');
+    const totalScreens = screens.length;
+    let currentIndex = 0;
+    let isLocked = true;
+    let isPasscodeVisible = false;
+
+    const CORRECT_PASSWORD = '0000';
+    let enteredPassword = '';
+
+    // 도트 세팅
+    const dotsContainer = document.getElementById('dots');
+    for (let i = 0; i < totalScreens; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('dot-page');
+        if (i === 0) dot.classList.add('active');
+        dotsContainer.appendChild(dot);
+    }
+    const pageDots = document.querySelectorAll('.dot-page');
+
+    for (let i = 0; i < 4; i++) {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        passcodeDots.appendChild(dot);
+    }
+    const dots = passcodeDots.querySelectorAll('.dot');
+
+    // 시간 처리 함수
+    function updateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+        lockTime.textContent = timeStr;
+        statusTime.textContent = timeStr;
+        lockDate.textContent = dateStr;
+
+        const ddayCountEl = document.getElementById('ddayCount');
+        const ddayStartDateEl = document.getElementById('ddayStartDate');
+
+        if (ddayCountEl && ddayStartDateEl) {
+            const startDate = new Date('2024-11-12T00:00:00'); 
+            const diffTime = now.getTime() - startDate.getTime();
+            const dDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+            ddayCountEl.textContent = `+${dDay}`;
+            ddayStartDateEl.textContent = `${startDate.getFullYear()}. ${startDate.getMonth() + 1}. ${startDate.getDate()}. ~`;
+        }
+    }
+
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // 잠금 화면 터치 이벤트
+    lockScreen.addEventListener('click', (e) => {
+        if (isPasscodeVisible && passcodeContainer.contains(e.target)) return;
+        if (!isPasscodeVisible) {
+            isPasscodeVisible = true;
+            passcodeContainer.classList.add('show');
+            return;
+        }
+        isPasscodeVisible = false;
+        enteredPassword = '';
+        updatePasscodeDots();
+        passcodeContainer.classList.remove('show');
+    });
+
+    keypad.addEventListener('click', (e) => {
+        if (!isLocked || !isPasscodeVisible) return;
+        const numKey = e.target.closest('.key[data-value]');
+        const deleteKey = e.target.closest('#deleteBtn');
+
+        if (deleteKey) {
+            enteredPassword = enteredPassword.slice(0, -1);
+        } else if (numKey) {
+            const value = numKey.getAttribute('data-value');
+            if (enteredPassword.length < 4) enteredPassword += value;
+        }
+        updatePasscodeDots();
+        if (enteredPassword.length === 4) {
+            setTimeout(checkPassword, 300);
+        }
+    });
+
+    function updatePasscodeDots() {
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('filled', i < enteredPassword.length);
+        });
+    }
+
+    function checkPassword() {
+        if (enteredPassword === CORRECT_PASSWORD) {
+            unlockPhone();
+        } else {
+            passcodeContainer.classList.add('shake');
+            enteredPassword = '';
+            updatePasscodeDots();
+            setTimeout(() => { passcodeContainer.classList.remove('shake'); }, 500);
+        }
+    }
+
+    function unlockPhone() {
+        lockScreen.style.transform = 'translateY(-100%)';
+        isLocked = false;
+        setTimeout(() => { lockScreen.style.display = 'none'; }, 600);
+    }
+
+    // 슬라이더 스와이프 로직
+    let startX = 0, isDragging = false, currentTranslate = 0, prevTranslate = 0;
+
+    function touchStart(e) {
+        if (isLocked) return;
+        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        isDragging = true;
+        prevTranslate = currentTranslate;
+        slider.style.transition = 'none';
+    }
+
+    function touchMove(e) {
+        if (!isDragging || isLocked) return;
+        const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        const diffX = currentX - startX;
+        currentTranslate = prevTranslate + diffX;
+        const maxTranslate = 0;
+        const minTranslate = -((totalScreens - 1) * phone.clientWidth);
+        currentTranslate = Math.max(minTranslate, Math.min(maxTranslate, currentTranslate));
+        slider.style.transform = `translateX(${currentTranslate}px)`;
+    }
+
+    function touchEnd() {
+        if (!isDragging || isLocked) return;
+        isDragging = false;
+        slider.style.transition = 'transform 0.3s ease-out';
+        const movedBy = currentTranslate - prevTranslate;
+        if (movedBy < -100 && currentIndex < totalScreens - 1) currentIndex++;
+        else if (movedBy > 100 && currentIndex > 0) currentIndex--;
+        currentTranslate = -currentIndex * phone.clientWidth;
+        slider.style.transform = `translateX(${currentTranslate}px)`;
+        updatePageDots();
+    }
+
+    function updatePageDots() {
+        pageDots.forEach((dot, i) => { dot.classList.toggle('active', i === currentIndex); });
+    }
+
+    slider.addEventListener('touchstart', touchStart);
+    slider.addEventListener('touchmove', touchMove);
+    slider.addEventListener('touchend', touchEnd);
+    slider.addEventListener('mousedown', touchStart);
+    slider.addEventListener('mousemove', touchMove);
+    slider.addEventListener('mouseup', touchEnd);
+    slider.addEventListener('mouseleave', touchEnd);
+
+    updatePageDots();
+    updatePasscodeDots();
+    lockScreen.style.display = 'flex';
+    passcodeContainer.classList.remove('show');
+
+    const appContainer = document.getElementById('appContainer');
+
+    // 앱 아이콘 실행 로직
+    document.querySelectorAll('.icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+            const target = icon.getAttribute('data-app');
+            if (!target) return;
+
+            if (target.startsWith('http')) {
+                window.open(target, '_blank');
+                return;
+            }
+
+            const iframe = document.createElement('iframe');
+            iframe.src = target;
+            iframe.className = 'app-frame';
+            
+            appContainer.innerHTML = `<div id="frameWrapper" style="position:relative;width:100%;height:100%;"></div>`;
+            document.getElementById('frameWrapper').appendChild(iframe);
+            appContainer.classList.add('active');
+
+            /* 상태창 배경색 */
+            const header = document.querySelector('header');
+            if (target === 'setting.html') {
+                header.style.background = '#f2f2f7'; // 설정 앱
+                header.style.color = '#000000';      // 검은 글씨
+            } 
+            else if (target === 'file.html') {
+                header.style.background = '#f2f2f7'; // 파일 앱
+                header.style.color = '#000000';      // 검은 글씨
+            }
+            else if (target === 'photo.html') { //
+                header.style.background = '#ffffff'; // 사진 앱 배경색
+                header.style.color = '#000000';      // 글자색
+            }
+            else {
+                // 목록에 없는 나머지 기본 앱들이 켜질 때 적용할 기본 색상
+                header.style.background = '#ffffff'; // 기본
+                header.style.color = '#000000';      // 검은 글씨
+            } 
+        });
+    });
+
+    // 홈 버튼 이벤트 핸들러
+    const homeBtn = document.getElementById('homeBtn');
+    homeBtn.addEventListener('click', () => {
+        if (appContainer.classList.contains('active')) {
+            appContainer.classList.remove('active');
+            setTimeout(() => {
+                appContainer.innerHTML = '';
+                document.querySelector('header').style.background = 'transparent';
+                document.querySelector('header').style.color = 'black';
+            }, 300);
+            return;
+        }
+
+        if (!isLocked) {
+            lockScreen.style.display = 'flex';
+            requestAnimationFrame(() => { lockScreen.style.transform = 'translateY(0)'; });
+            isLocked = true;
+            isPasscodeVisible = false;
+            enteredPassword = '';
+            passcodeContainer.classList.remove('show');
+            updatePasscodeDots();
+            updateTime();
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; padding: 20px; font-family: sans-serif; background: #fff; }
+        
+        .profile-img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #ccc;
+            overflow: hidden;
+        }
+
+        .profile-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            box-sizing: border-box;
+        }
+
+        #history-list { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative;
+            height: 40px; /* 로고 높이에 맞춤 */
+        }
+
+        .logo-img {
+            height: 40px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .profile-container {
+            margin-left: auto; /* 이 속성이 왼쪽의 여백을 모두 밀어내어 오른쪽으로 붙게 함 */
+        }
+
+        /* 1. 부모 요소에 기준점 설정 */
+        .history-item { 
+            padding: 10px 30px 10px 10px; /* 오른쪽에서 버튼 공간만큼 패딩 확보 */
+            color: #555; 
+            cursor: pointer; 
+            position: relative; /* 핵심: 이 박스 안에서만 버튼이 움직이게 함 */
+        }
+
+        /* 2. 닫기 버튼 스타일 조정 */
+        .close-btn {
+            position: absolute;
+            top: 50%;           /* 세로 중앙 */
+            right: 10px;        /* 오른쪽 끝에서 10px 위치 */
+            transform: translateY(-50%); /* 정확한 중앙 정렬 */
+            color: #999;        /* 약간 흐린 색 */
+            font-size: 20px;    /* 크기 조정 */
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="profile-container profile-img">
+            <img src="../img/구글 프로필 사진.png" alt="프로필">
+        </div>
+    </div>
+
+    <div class="header" style="margin-bottom: 20px;">
+        <img src="../icon/google-logo.png" alt="로고" class="logo-img">
+    </div>
+
+    <input type="text" class="search-box" id="searchInput" placeholder="검색어를 입력하세요">
+
+    <div id="history-list">
+        <div class="history-item">코어 병
+            <span class="close-btn">×</span>
+        </div>
+        <hr>
+        <div class="history-item">크로우
+            <span class="close-btn">×</span>
+        </div>
+        <hr>
+        <div class="history-item">N109
+            <span class="close-btn">×</span>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('searchInput');
+        const history = document.getElementById('history-list');
+
+        input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            history.style.display = 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target !== input) {
+                history.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

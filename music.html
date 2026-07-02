@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    /* 전체 페이지/앱 컨테이너 설정 */
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%; /* 앱 내부 프레임 높이 100% */
+        box-sizing: border-box;
+        font-family: -apple-system, sans-serif;
+        background-color: #f6f6f6; /* 앱 배경색 */
+    }
+
+    /* 앱 레이아웃 (휴대폰 프레임 안에서 꽉 차게) */
+    .app-container {
+        max-width: 330px; /* (이전 .maxx2의 역할) */
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column; /* 헤더-콘텐츠 순서대로 위에서 아래로 쌓이게 */
+    }
+
+    /* 앱 상단 헤더 (제목/네비게이션 영역) */
+    .app-header {
+        width: 100%;
+        padding: 15px 20px 10px; /* 상단 패딩 증가 */
+        background-color: #ffffff; /* 흰색 배경 */
+        border-bottom: 0.5px solid #d9d9d9;
+        text-align: left; /* 제목 왼쪽 정렬 */
+        box-sizing: border-box;
+    }
+
+    .app-header h4 {
+        margin: 0;
+        font-size: 24px; /* 큰 제목 크기 */
+        font-weight: 700;
+        color: black;
+    }
+    
+    /* 앱 콘텐츠 영역 (메인 내용) */
+    .app-content {
+        flex-grow: 1; /* 남은 공간을 모두 차지하여 스크롤 가능하게 */
+        padding: 20px;
+        overflow-y: auto; /* 내용이 넘치면 세로 스크롤 허용 */
+        box-sizing: border-box;
+        font-size: 15px;
+        color: #333;
+    }
+
+    /* 플레이어 컨트롤 영역 */
+    .player-controls {
+        width: 100%;
+        max-width: 250px;
+        margin: 30px auto 0;
+    }
+
+    /* 시간 표시 영역 */
+    .time-display {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 5px;
+        opacity: 0.8;
+    }
+
+    .list-st {
+        background-color: #e7e7e7;
+        padding: 10px;
+        margin: -10px;
+        border: #e7e7e7;
+        border-radius: 10px;
+    }
+
+    /* 재생 바 스타일 (Range Input) */
+    .progress-bar {
+        width: 100%;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #d9d9d9;
+        border-radius: 3px;
+        cursor: pointer;
+        margin: 5px 0 20px;
+    }
+
+    /* 재생 바 - 트랙 (파란색) */
+    .progress-bar::-webkit-slider-runnable-track {
+        background: transparent;
+        border-radius: 3px;
+        height: 6px;
+    }
+
+    /* 재생 바 - 엄지(Thumb) (작은 원) */
+    .progress-bar::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 15px;
+        height: 15px;
+        background: #333333; /* 검정색 또는 원하는 색상 */
+        border-radius: 50%;
+        margin-top: -4.5px; /* 중앙 정렬 */
+    }
+
+    .progress-bar::-moz-range-track {
+        background: transparent; 
+        border-radius: 3px;
+        height: 6px;
+    }
+</style>
+<body>
+    <div class="app-container">
+        
+        <header class="app-header"> 
+            <h4 style="text-align: center;">MUSIC</h4>
+        </header>
+        
+        <section class="app-content">
+                <div id="player" style="width: 1px; height: 1px; overflow: hidden; position: absolute; top: -9999px;"></div> 
+                <h4 style="margin-top: -7px;">🎵 현재 재생 중인 노래</h4>
+
+                <div class="list-st" style="text-align: center;">
+                    <img src="../img/devil.jpeg" style="width: 80%; height: auto; border-radius: 5px;">
+                    <h4 style="text-align: center;">The Devil is a Gentlman</h4>
+                    <p style="font-size: 15px; text-align: center; margin-top: -15spx;">Merci Raines</p>
+                    <div class="player-controls">
+                        <div class="time-display">
+                            <span id="currentTime">0:00</span>
+                            <span id="durationTime">3:30</span> 
+                        </div>
+                        <!--재생바-->
+                        <input type="range" id="progressBar" min="0" max="210" value="70" step="1" class="progress-bar">
+                        
+                        <img src="../icon/L_player.png" alt="signal" style="height:18px;
+                            vertical-align:middle; margin-left:4px;">&emsp;&emsp;
+                        <img src="../icon/player1.png" alt="signal" style="height:18px;
+                            vertical-align:middle; margin-left:4px;">&emsp;&emsp;
+                        <img src="../icon/r_player.png" alt="signal" style="height:18px;
+                            vertical-align:middle; margin-left:4px;">
+                        <p style="font-size: 5px;">&emsp;</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="app-content" style="margin-top: -50px;">
+                <h4>🎶 재생목록</h4>
+                
+                <div class="list-st">
+                    <p><b>Cigarettes Afer Sex</b><br>Apocalypse</p>
+                </div>
+
+                <p style="font-size: 8px;">&emsp;</p>
+
+                <div class="list-st">
+                    <p><b>Hozier</b><br>Take Me to Church</p>
+                </div>
+
+                <p style="font-size: 8px;">&emsp;</p>
+
+                <div class="list-st">
+                    <p><b>The Neighbourhood</b><br>Daddy Issues</p>
+                </div>
+
+                <p style="font-size: 8px;">&emsp;</p>
+
+                <div class="list-st">
+                    <p><b>Lana Del Rey</b><br>Born to die</p>
+                </div>
+
+                <p style="font-size: 8px;">&emsp;</p>
+
+                <div class="list-st">
+                    <p><b>Arctic Monkeys</b><br>Do I Wanna Know?</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+<script>
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationTimeEl = document.getElementById('durationTime');
+    
+    // 1. 초기 재생 시간 설정
+    const DURATION = 210; 
+    durationTimeEl.textContent = formatTime(DURATION);
+
+    // 2. 시간 포맷 함수 (초 -> 분:초)
+    function formatTime(seconds) {
+        const min = Math.floor(seconds / 60);
+        const sec = Math.floor(seconds % 60);
+        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    // 3. 재생 바 배경색 및 시간 업데이트 함수
+    function updateProgressDisplay(value) {
+        const max = parseFloat(progressBar.max);
+        const current = parseFloat(value);
+        
+        // 진행률 계산
+        const percentage = (current / max) * 100;
+        
+        // 시간 표시 업데이트 (드래그 시 시각적 피드백 제공)
+        currentTimeEl.textContent = formatTime(current);
+
+        // 배경색 변경: 진행된 부분은 #333, 나머지 부분은 #d9d9d9
+        // **이 코드가 드래그 시 색상을 변하게 하는 핵심입니다.**
+        progressBar.style.background = `linear-gradient(to right, #333 0%, #333 ${percentage}%, #d9d9d9 ${percentage}%, #d9d9d9 100%)`;
+    }
+
+    // 4. 'input' 이벤트 리스너: 드래그할 때마다 실행됨
+    progressBar.addEventListener('input', (e) => {
+        updateProgressDisplay(e.target.value);
+    });
+
+    // 5. 초기 로드 시 색상 설정 (0% 상태)
+    updateProgressDisplay(progressBar.value);
+
+</script>
+</html>
+</html>
